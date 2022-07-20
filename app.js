@@ -1,6 +1,14 @@
 const http = require('http');
-const routes = require('./routes');
+const express = require('express');
+const app = express();
 
-const server = http.createServer(routes);
+app.use('/users', (request, response, next) => {
+  console.log('Users list');
+});
 
-server.listen(3000);
+app.use((request, response, next) => {
+  console.log('In root route')
+  response.send("We are in root route");
+});
+
+app.listen(3000);
