@@ -1,0 +1,23 @@
+extends layouts/main-layout.pug 
+
+block styles    
+    link(rel="stylesheet", href="/css/main.css")
+    link(rel="stylesheet", href="/css/product.css")
+
+block content
+    main
+        if products.length > 0
+            .grid
+                each product in products
+                    article.card.product-item
+                        header.card__header
+                            h1.product__title #{product.title}
+                        .card__image
+                            img(src="https://cdn.pixabay.com/photo/2016/06/01/06/26/open-book-1428428_960_720.jpg", alt="A book")
+                        .card__content
+                            h2.product__price $19.99
+                            p.product__description Lorem ipsum dolor sit amet, consectetur adipisicing elit. 
+                        .card-actions
+                            button.btn Add to cart
+        else
+            h1 No products
