@@ -1,15 +1,8 @@
-const http = require("http");
 const path = require("path");
 const express = require("express");
 const bodyParser = require("body-parser");
 const errorController = require("./controllers/error");
-const sequelize = require("./utils/database");
-const Product = require("./models/product");
-const User = require("./models/user");
-const Cart = require("./models/cart");
-const CartItem = require("./models/cart-item");
-const Order = require("./models/order");
-const OrderItem = require("./models/order-item");
+const { mongoConnect } = require("./utils/database");
 const app = express();
 
 app.set("view engine", "ejs");
@@ -17,14 +10,15 @@ app.set("views", "views");
 
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
+const User = require("./models/user");
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use((req, res, next) => {
-	User.findByPk(1)
+	User.findById("62eab65780b0edfc041449c0")
 		.then(user => {
-			req.user = user;
+			req.user = new User(user.username, user.email, user._id, user.cart);
 			next();
 		})
 		.catch(e => console.log(e));
@@ -35,30 +29,6 @@ app.use(shopRoutes);
 
 app.use(errorController.notFound);
 
-Product.belongsTo(User, { constraints: true, onDelete: "CASCADE" });
-User.hasMany(Product);
-User.hasOne(Cart);
-Cart.belongsTo(User);
-Cart.belongsToMany(Product, { through: CartItem });
-Order.belongsTo(User);
-User.hasMany(Order);
-Product.belongsToMany(Cart, { through: CartItem });
-Order.belongsToMany(Product, { through: OrderItem });
-
-sequelize
-	// .sync({force:true})
-	.sync()
-	.then(() => {
-		return User.findByPk(1);
-	})
-	.then(user => {
-		if (!user) User.create({ name: "Admin", email: "admin@mail.com" });
-		return Promise.resolve(user);
-	})
-	.then(user => {
-		return user.createCart();
-	})
-	.then(() => {
-		app.listen(3000);
-	})
-	.catch(e => console.log(e));
+mongoConnect(() => {
+	app.listen(3000);
+});
