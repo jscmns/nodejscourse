@@ -1,10 +1,15 @@
 const Product = require("../models/product");
-const productLoader = require("../utils/utils").productLoader;
+const Order = require("../models/order");
 
 exports.getProducts = (req, res, next) => {
-	Product.fetchAll()
+	Product.find()
 		.then(products => {
-			res.render("shop/product-list", { products, pageTitle: "All products", path: "/products" });
+			res.render("shop/product-list", {
+				products,
+				pageTitle: "All products",
+				path: "/products",
+				isAuthenticated: req.user
+			});
 		})
 		.catch(e => console.log(e));
 };
@@ -16,28 +21,36 @@ exports.getProduct = (req, res, next) => {
 			res.render("shop/product-detail", {
 				product,
 				pageTitle: product.title,
-				path: "/products"
+				path: "/products",
+				isAuthenticated: req.user
 			});
 		})
 		.catch(e => console.log(e));
 };
 
 exports.getIndex = (req, res, next) => {
-	Product.fetchAll()
+	Product.find()
 		.then(products => {
-			res.render("shop/index", { products, pageTitle: "Shop", path: "/" });
+			res.render("shop/index", {
+				products,
+				pageTitle: "Shop",
+				path: "/",
+				isAuthenticated: req.user,
+				csrfToken: req.csrfToken()
+			});
 		})
 		.catch(e => console.log(e));
 };
 
 exports.getCart = (req, res, next) => {
 	req.user
-		.getCart()
-		.then(products => {
+		.populate("cart.items.productId")
+		.then(user => {
 			res.render("shop/cart", {
 				path: "/cart",
 				pageTitle: "Your cart",
-				products
+				products: user.cart.items,
+				isAuthenticated: req.user
 			});
 		})
 		.catch(e => console.log(e));
@@ -56,7 +69,7 @@ exports.postCart = (req, res, next) => {
 exports.deleteCartItem = (req, res, next) => {
 	const { id } = req.body;
 	req.user
-		.deleteCartItem(id)
+		.removeFromCart(id)
 		.then(() => {
 			res.redirect("/cart");
 		})
@@ -64,13 +77,13 @@ exports.deleteCartItem = (req, res, next) => {
 };
 
 exports.getOrders = (req, res, next) => {
-	req.user
-		.getOrders()
+	Order.find({ "user.userId": req.user._id })
 		.then(orders => {
 			res.render("shop/orders", {
 				path: "/orders",
 				pageTitle: "Your orders",
-				orders
+				orders,
+				isAuthenticated: req.user
 			});
 		})
 		.catch(e => console.log(e));
@@ -78,13 +91,31 @@ exports.getOrders = (req, res, next) => {
 
 exports.postOrder = (req, res, next) => {
 	req.user
-		.addOrder()
-		.then(() => {
-			res.redirect("/orders");
+		.populate("cart.items.productId")
+		.then(user => {
+			const products = user.cart.items.map(i => {
+				return { quantity: i.quantity, productData: { ...i.productId._doc } };
+			});
+			const order = new Order({
+				user: {
+					email: req.user.email,
+					userId: req.user
+				},
+				products
+			});
+			return order.save();
 		})
+		.then(() => {
+			return req.user.clearCart();
+		})
+		.then(() => res.redirect("/orders"))
 		.catch(e => console.log(e));
 };
 
 exports.getCheckout = (req, res, next) => {
-	res.render("/shop/checkout", { path: "/checkout", pageTitle: "Checkout" });
+	res.render("/shop/checkout", {
+		path: "/checkout",
+		pageTitle: "Checkout",
+		isAuthenticated: req.user
+	});
 };

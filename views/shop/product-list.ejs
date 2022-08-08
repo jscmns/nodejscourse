@@ -28,13 +28,15 @@
                                 </div>
                                 <div class="card__actions">
                                     <a href="/products/<%=product._id%>" class="btn">Details</a>
-                                    <%- include('../includes/add-to-cart.ejs', {product}) %>
+                                    <% if (isAuthenticated) { %>
+                                        <%- include('../includes/add-to-cart.ejs', {product}) %>
+                                    <% } %>
                                 </div>
                             </article>
                             <% } %>
                     </div>
                     <% } else { %>
                         <h1>No Products Found!</h1>
-                        <% } %>
+                    <% } %>
             </main>
             <%- include('../includes/end.ejs') %>

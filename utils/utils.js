@@ -9,7 +9,7 @@ exports.productLoader = (req, res, next, { ...rest }) => {
 };
 
 exports.productLoaderForUser = (req, res, next, { ...rest }) => {
-	req.user
+	req.session
 		.getProducts()
 		.then(products => {
 			res.render(rest.route, { products, pageTitle: rest.pageTitle, path: rest.path });
