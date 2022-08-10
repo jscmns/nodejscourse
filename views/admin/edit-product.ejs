@@ -14,6 +14,7 @@
           class="product-form" 
           action=<%= editing ? "/admin/edit-product" : "/admin/add-product" %> 
           method="POST"
+          enctype="multipart/form-data"
         >
             <div class="form-control">
                 <label for="title">Title</label>
@@ -29,18 +30,30 @@
                   value="<%= (editing || hasError) && product.title || "" %>" 
                 >
             </div>
+            <!-- <div class="form-control">
+                <label for="image">Image URL</label>
+                <input
+                  class=
+                    "
+                    
+                    "  
+                  type="text" 
+                  name="image" 
+                  id="image" 
+                  value=
+                >
+            </div> -->
             <div class="form-control">
-                <label for="imageUrl">Image URL</label>
+                <label for="image">Image</label>
                 <input
                   class=
                     "<%= 
                       validationResult.errors !== undefined && 
-                      validationResult.errors.find(e => e.param === "imageUrl") ? 'invalid' : '' 
+                      validationResult.errors.find(e => e.param === "image") ? 'invalid' : '' 
                     %>"  
-                  type="text" 
-                  name="imageUrl" 
-                  id="imageUrl" 
-                  value=<%= (editing || hasError) && product.imageUrl || "" %>
+                  type="file" 
+                  name="image" 
+                  id="image"
                 >
             </div>
             <div class="form-control">
@@ -62,16 +75,14 @@
                 <label for="description">Description</label>
                 <textarea 
                   class=
-                    "<%= 
-                      validationResult.errors !== undefined && 
-                      validationResult.errors.find(e => e.param === "description") ? 'invalid' : '' 
-                    %>" 
+                  "<%=  
+                    validationResult.errors !== undefined && 
+                    validationResult.errors.find(e => e.param === "description") ? 'invalid' : '' 
+                  %>" 
                   name="description" 
                   id="description" 
                   rows="5" 
-                >
-                  <%= (editing || hasError) && product.description || "" %>
-                </textarea>
+                ><%= (editing || hasError) && product.description || "" %></textarea>
             </div> 
             <% if (editing) { %>  
               <input type="hidden" value="<%= product._id %>" name="id">
