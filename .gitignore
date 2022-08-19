@@ -3,3 +3,6 @@ package-lock.json
 data/
 images/
 .env
+server.cert
+server.key
+access.log

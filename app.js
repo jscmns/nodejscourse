@@ -1,6 +1,9 @@
 require("dotenv").config();
+const fs = require("fs");
 const path = require("path");
 const express = require("express");
+const https = require("https");
+
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const session = require("express-session");
@@ -8,19 +11,28 @@ const MongoDBStore = require("connect-mongodb-session")(session);
 const csrf = require("csurf");
 const errorController = require("./controllers/error");
 const app = express();
-const password = encodeURIComponent("iP32Le26WjaQe7rw");
-const uri = `mongodb+srv://admin:${password}@cluster0.fnumx.mongodb.net/shop?retryWrites=true&w=majority`;
+const password = encodeURIComponent(process.env.MONGO_PASSWORD);
+const uri = `mongodb+srv://${process.env.MONGO_USER}:${password}@cluster0.fnumx.mongodb.net/${process.env.PROJECT_DATABASE_NAME}?retryWrites=true&w=majority`;
 const store = new MongoDBStore({ uri, collection: "sessions" });
 const csrfProtection = csrf();
 const flash = require("connect-flash");
 const multer = require("multer");
+const helmet = require("helmet");
+const compression = require("compression");
+const morgan = require("morgan");
+
+const privateKey = fs.readFileSync("./server.key");
+const certificate = fs.readFileSync("./server.cert");
 
 const fileStorage = multer.diskStorage({
 	destination: (req, file, cb) => {
 		cb(null, "images");
 	},
 	filename: (req, file, cb) => {
-		cb(null, new Date().toISOString().replace(/\-/g, '').replace(/\:/g, '') + "-" + file.originalname);
+		cb(
+			null,
+			new Date().toISOString().replace(/\-/g, "").replace(/\:/g, "") + "-" + file.originalname
+		);
 	}
 });
 const fileFilter = (req, file, cb) => {
@@ -43,10 +55,16 @@ const shopRoutes = require("./routes/shop");
 const authRoutes = require("./routes/auth");
 const User = require("./models/user");
 
+const accessLogStream = fs.createWriteStream(path.join(__dirname, "access.log"), { flags: "a" });
+
+app.use(helmet());
+app.use(compression());
+app.use(morgan("combined", { stream: accessLogStream }));
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(multer({ storage: fileStorage, fileFilter }).single("image"));
 app.use(express.static(path.join(__dirname, "public")));
-app.use('/images', express.static(path.join(__dirname, "images")));
+app.use("/images", express.static(path.join(__dirname, "images")));
 app.use(session({ secret: "my secret", resave: false, saveUninitialized: false, store }));
 
 app.use(csrfProtection);
@@ -88,6 +106,7 @@ app.use((error, req, res, next) => {
 mongoose
 	.connect(uri)
 	.then(() => {
-		app.listen(3000);
+		// https.createServer({key: privateKey, cert: certificate }, 
+		app.listen(process.env.PORT || 3000);
 	})
 	.catch(err => console.log(err));
